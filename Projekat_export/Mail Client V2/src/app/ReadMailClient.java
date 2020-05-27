@@ -1,11 +1,17 @@
 package app;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,10 +31,12 @@ import org.apache.xml.security.utils.JavaUtils;
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 
+import model.mailclient.MailBody;
 import support.MailHelper;
 import support.MailReader;
 import util.Base64;
 import util.GzipUtil;
+import util.KeyStoreReader;
 
 public class ReadMailClient extends MailClient {
 

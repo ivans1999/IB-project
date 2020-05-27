@@ -35,6 +35,14 @@ public class MailBody {
 		this.encKey = Base64.encodeToString(encKey);
 	}
 	
+	public MailBody(String encMessage, byte[] iV1, byte[] iV2, byte[] encKey) {
+		super();
+		this.encMessage = encMessage;
+		this.IV1 = Base64.encodeToString(iV1);
+		this.IV2 = Base64.encodeToString(iV2);
+		this.encKey = Base64.encodeToString(encKey);
+	}
+	
 	public MailBody(byte[] encMessage, byte[] iV1, byte[] iV2, byte[] encKey, byte[] signature) {
 		super();
 		this.encMessage = Base64.encodeToString(encMessage);

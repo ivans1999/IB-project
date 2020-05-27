@@ -2,6 +2,11 @@ package app;
 
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.io.InputStreamReader;
 
 import javax.crypto.Cipher;
@@ -14,11 +19,14 @@ import org.apache.xml.security.utils.JavaUtils;
 
 import com.google.api.services.gmail.Gmail;
 
+import model.mailclient.MailBody;
 import util.Base64;
 import util.GzipUtil;
 import util.IVHelper;
+import util.KeyStoreReader;
 import support.MailHelper;
 import support.MailWritter;
+
 
 public class WriteMailClient extends MailClient {
 
@@ -70,6 +78,20 @@ public class WriteMailClient extends MailClient {
 			byte[] ciphersubject = aesCipherEnc.doFinal(compressedSubject.getBytes());
 			String ciphersubjectStr = Base64.encodeToString(ciphersubject);
 			System.out.println("Kriptovan subject: " + ciphersubjectStr);
+			
+			
+			//ucitavanje sifre,sertifikata iz keystorea
+			KeyStoreReader ksr = new KeyStoreReader();
+			ksr.load(new FileInputStream("./data/usera.jks"), "usera");
+			Certificate certUserB = ksr.getCertificate("userb");
+			PublicKey pk = certUserB.getPublicKey();
+			Cipher rsaCipherEnc = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, pk);
+			byte[] sifrovanKljuc = rsaCipherEnc.doFinal(secretKey.getEncoded());
+			System.out.println("Kriptovan kljuc: " + Base64.encodeToString(sifrovanKljuc));
+			
+			MailBody mb = new MailBody(ciphertextStr, ivParameterSpec1.getIV(), ivParameterSpec2.getIV(), sifrovanKljuc);
+			
 			
 			
 			//snimaju se bajtovi kljuca i IV.
