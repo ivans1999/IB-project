@@ -8,6 +8,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -44,6 +45,10 @@ public class KeyStoreReader {
 			e.printStackTrace();
 			return null;
 		}
+	}
+	
+	public PublicKey getPublicKeyFromCertificate(Certificate certificate) {
+		return certificate.getPublicKey();
 	}
 
 }

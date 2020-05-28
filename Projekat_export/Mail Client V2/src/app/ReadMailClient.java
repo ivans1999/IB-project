@@ -84,6 +84,24 @@ public class ReadMailClient extends MailClient {
 	    Integer answer = Integer.parseInt(answerStr);
 	    
 		MimeMessage chosenMessage = mimeMessages.get(answer);
+		
+		MailBody mb = new MailBody(MailHelper.getText(chosenMessage));
+
+		KeyStoreReader ksr;
+		byte[] secretKeyBytes = null;
+		try {
+			ksr = new KeyStoreReader();
+			ksr.load(new FileInputStream("./data/userb.jks"), "userb");
+			PrivateKey key = ksr.getKey("userb", "userb");
+			Cipher rsaCipherDec = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			rsaCipherDec.init(Cipher.DECRYPT_MODE, key);
+
+			secretKeyBytes = rsaCipherDec.doFinal(mb.getEncKeyBytes());
+
+		} catch (KeyStoreException | NoSuchProviderException | CertificateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	    
         //TODO: Decrypt a message and decompress it. The private key is stored in a file.
 		Cipher aesCipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
@@ -94,12 +112,18 @@ public class ReadMailClient extends MailClient {
 		IvParameterSpec ivParameterSpec1 = new IvParameterSpec(iv1);
 		aesCipherDec.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec1);
 		
-		String str = MailHelper.getText(chosenMessage);
-		byte[] bodyEnc = Base64.decode(str);
-		
-		String receivedBodyTxt = new String(aesCipherDec.doFinal(bodyEnc));
-		String decompressedBodyText = GzipUtil.decompress(Base64.decode(receivedBodyTxt));
-		System.out.println("Body text: " + decompressedBodyText);
+		System.out.println(mb.getEncMessage());
+		byte[] decMsg = null;
+		try {
+			decMsg = aesCipherDec.doFinal(mb.getEncMessageBytes());
+			String receivedBodyTxt = new String(decMsg);
+			System.out.println(receivedBodyTxt);
+			String decompressedBodyText = GzipUtil.decompress(Base64.decode(receivedBodyTxt));
+			System.out.println("Body text: " + decompressedBodyText);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
 		
 		
 		byte[] iv2 = JavaUtils.getBytesFromFile(IV2_FILE);
