@@ -85,18 +85,18 @@ public class ReadMailClient extends MailClient {
 	    
 		MimeMessage chosenMessage = mimeMessages.get(answer);
 		
-		MailBody mb = new MailBody(MailHelper.getText(chosenMessage));
+		MailBody mBody = new MailBody(MailHelper.getText(chosenMessage));
 
-		KeyStoreReader ksr;
+		KeyStoreReader kStoreReader;
 		byte[] secretKeyBytes = null;
 		try {
-			ksr = new KeyStoreReader();
-			ksr.load(new FileInputStream("./data/userb.jks"), "userb");
-			PrivateKey key = ksr.getKey("userb", "userb");
+			kStoreReader = new KeyStoreReader();
+			kStoreReader.load(new FileInputStream("./data/userb.jks"), "userb");
+			PrivateKey privateKey = kStoreReader.getKey("userb", "userb");
 			Cipher rsaCipherDec = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			rsaCipherDec.init(Cipher.DECRYPT_MODE, key);
+			rsaCipherDec.init(Cipher.DECRYPT_MODE, privateKey);
 
-			secretKeyBytes = rsaCipherDec.doFinal(mb.getEncKeyBytes());
+			secretKeyBytes = rsaCipherDec.doFinal(mBody.getEncKeyBytes());
 
 		} catch (KeyStoreException | NoSuchProviderException | CertificateException e) {
 			// TODO Auto-generated catch block
@@ -112,10 +112,10 @@ public class ReadMailClient extends MailClient {
 		IvParameterSpec ivParameterSpec1 = new IvParameterSpec(iv1);
 		aesCipherDec.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec1);
 		
-		System.out.println(mb.getEncMessage());
+		System.out.println(mBody.getEncMessage());
 		byte[] decMsg = null;
 		try {
-			decMsg = aesCipherDec.doFinal(mb.getEncMessageBytes());
+			decMsg = aesCipherDec.doFinal(mBody.getEncMessageBytes());
 			String receivedBodyTxt = new String(decMsg);
 			System.out.println(receivedBodyTxt);
 			String decompressedBodyText = GzipUtil.decompress(Base64.decode(receivedBodyTxt));

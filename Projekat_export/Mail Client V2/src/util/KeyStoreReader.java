@@ -14,21 +14,21 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 
 public class KeyStoreReader {
-	KeyStore ks;
+	KeyStore keyStore;
 
 	public KeyStoreReader() throws KeyStoreException, NoSuchProviderException, NoSuchAlgorithmException, CertificateException, IOException {
-		ks = ks.getInstance("JKS", "SUN");
-		ks.load(null);
+		keyStore = keyStore.getInstance("JKS", "SUN");
+		keyStore.load(null);
 	}
 	
 	public void load(InputStream is, String password) throws NoSuchAlgorithmException, CertificateException, IOException {
-		ks.load(is, password.toCharArray());
+		keyStore.load(is, password.toCharArray());
 	}
 	
 	public Certificate getCertificate(String alias) {
 		try {
 			
-			return ks.getCertificate(alias);
+			return keyStore.getCertificate(alias);
 		} catch (KeyStoreException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -39,7 +39,7 @@ public class KeyStoreReader {
 	
 	public PrivateKey getKey(String alias, String password) {
 		try {
-			return (PrivateKey)ks.getKey(alias, password.toCharArray());
+			return (PrivateKey)keyStore.getKey(alias, password.toCharArray());
 		} catch (UnrecoverableKeyException | KeyStoreException | NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

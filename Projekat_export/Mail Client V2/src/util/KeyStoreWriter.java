@@ -21,21 +21,21 @@ public class KeyStoreWriter {
 	 * @return Instanca KeyStore objekta
 	 */
 	public KeyStore loadKeyStore(String keyStoreFilePath, char[] password) {
-		KeyStore ks = null;
+		KeyStore keyStore = null;
 		try {
-			ks = ks.getInstance("JKS");
+			keyStore = keyStore.getInstance("JKS");
 			if (keyStoreFilePath != null)  {
-				ks.load(new FileInputStream(keyStoreFilePath), password);
+				keyStore.load(new FileInputStream(keyStoreFilePath), password);
 			}
 			else {
-				ks.load(null, password);
+				keyStore.load(null, password);
 			}
 		} catch (NoSuchAlgorithmException | CertificateException | KeyStoreException | IOException e) {
 			e.printStackTrace();
 			System.err.println("\n[KeyStoreWriter - readKeyStore] Greska prilikom ucitavanja KeyStore-a. Proveriti da li je putanja ispravna i da li je prosledjen dobra sifra za otvaranje KeyStore-a!\n");			
 		}
 		
-		return ks;
+		return keyStore;
 	}
 	
 	/**
@@ -45,10 +45,10 @@ public class KeyStoreWriter {
 	 * @param keyStoreFilePath - putanja do KeyStore fajla
 	 * @param password - sifra za otvaranje KeyStore fajla
 	 */
-	public void saveKeyStore(KeyStore ks, String keyStoreFilePath, char[] password) {
+	public void saveKeyStore(KeyStore keyStore, String keyStoreFilePath, char[] password) {
 		try {
 			// cuvanje KeyStore-a na disku
-			ks.store(new FileOutputStream(keyStoreFilePath), password);
+			keyStore.store(new FileOutputStream(keyStoreFilePath), password);
 		} catch (NoSuchAlgorithmException | CertificateException | KeyStoreException | IOException e) {
 			e.printStackTrace();
 			System.err.println("\n[KeyStoreWriter - saveKeyStore] Greska prilikom snimanja KeyStore-a. Proveriti da li je putanja ispravna i da li je prosledjen dobra sifra za otvaranje KeyStore-a!\n");			
@@ -64,10 +64,10 @@ public class KeyStoreWriter {
 	 * @param password - sifra za pristup sertifikatu i javnom kljucu, koristi se kada treba procitati njihove vrednosti
 	 * @param certificate - referenca na sertifikat koji se upisuje u KeyStore
 	 */
-	public void addToKeyStore(KeyStore ks, String alias, PrivateKey privateKey, char[] password, Certificate certificate) {
+	public void addToKeyStore(KeyStore keyStore, String alias, PrivateKey privateKey, char[] password, Certificate certificate) {
 		try {
 			// postavljanje novog unosa u KeyStore pod zeljenim aliasom
-			ks.setKeyEntry(alias, privateKey, password, new Certificate[] {certificate});
+			keyStore.setKeyEntry(alias, privateKey, password, new Certificate[] {certificate});
 		} catch (KeyStoreException e) {
 			e.printStackTrace();
 			System.err.println("\n[KeyStoreWriter - addToKeyStore] Greska prilikom snimanja KeyStore-a. Proveriti da li su svi prosledjeni parametri ispravni!\n");			

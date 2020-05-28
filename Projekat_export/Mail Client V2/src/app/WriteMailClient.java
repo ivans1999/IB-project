@@ -81,16 +81,16 @@ public class WriteMailClient extends MailClient {
 			
 			
 			//ucitavanje sifre,sertifikata iz keystorea
-			KeyStoreReader ksr = new KeyStoreReader();
-			ksr.load(new FileInputStream("./data/usera.jks"), "usera");
-			Certificate certUserB = ksr.getCertificate("userb");
-			PublicKey pk = certUserB.getPublicKey();
+			KeyStoreReader kStoreReader = new KeyStoreReader();
+			kStoreReader.load(new FileInputStream("./data/usera.jks"), "usera");
+			Certificate cerUserB = kStoreReader.getCertificate("userb");
+			PublicKey publicK = cerUserB.getPublicKey();
 			Cipher rsaCipherEnc = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, pk);
+			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, publicK);
 			byte[] sifrovanKljuc = rsaCipherEnc.doFinal(secretKey.getEncoded());
 			System.out.println("Kriptovan kljuc: " + Base64.encodeToString(sifrovanKljuc));
 			
-			MailBody mb = new MailBody(ciphertextStr, ivParameterSpec1.getIV(), ivParameterSpec2.getIV(), sifrovanKljuc);
+			MailBody mBody = new MailBody(ciphertextStr, ivParameterSpec1.getIV(), ivParameterSpec2.getIV(), sifrovanKljuc);
 			
 			
 			
