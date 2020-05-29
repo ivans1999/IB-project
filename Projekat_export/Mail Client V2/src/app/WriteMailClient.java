@@ -91,6 +91,8 @@ public class WriteMailClient extends MailClient {
 			System.out.println("Kriptovan kljuc: " + Base64.encodeToString(sifrovanKljuc));
 			
 			MailBody mBody = new MailBody(ciphertextStr, ivParameterSpec1.getIV(), ivParameterSpec2.getIV(), sifrovanKljuc);
+			String mailBody = mBody.toCSV();
+			System.out.println("Telo emaila: " + mailBody);
 			
 			
 			
