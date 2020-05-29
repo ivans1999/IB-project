@@ -11,7 +11,14 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+
+import org.bouncycastle.asn1.x500.X500Name;
+import model.keystore.IssuerData;
 
 public class KeyStoreReader {
 	KeyStore keyStore;
@@ -50,5 +57,20 @@ public class KeyStoreReader {
 	public PublicKey getPublicKeyFromCertificate(Certificate certificate) {
 		return certificate.getPublicKey();
 	}
+	
+	public IssuerData getIssuerFromCertificate(Certificate certificate, PrivateKey privateKey) {
+		try {
+			X509Certificate x509Certificate = (X509Certificate) certificate;
+			JcaX509CertificateHolder certificateHolder = new JcaX509CertificateHolder(x509Certificate);
+			
+			X500Name issuerName = certificateHolder.getIssuer();
+			return new IssuerData(privateKey, issuerName);
+		} catch (CertificateEncodingException e) {
+			e.printStackTrace();
+		}
+		
+		return null;
+	}
+	
 
 }
