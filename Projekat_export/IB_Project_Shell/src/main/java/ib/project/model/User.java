@@ -31,7 +31,7 @@ public class User {
     @Column(name = "active")
     private boolean active;
     
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "authority", referencedColumnName="name")
     private Authority authority;
 

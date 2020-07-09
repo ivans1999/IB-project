@@ -18,9 +18,9 @@ $(document).ready(function(){
 				var userEmail = response.email;
 				sessionStorage.setItem('userEmail', userEmail);
 				if(response.authority.name == 'Admin'){
-					window.location.href = 'index.html';
+					window.location.href = 'adminPage.html';
 				}else {
-					window.location.href = 'index.html';
+					window.location.href = 'userPage.html';
 				}
 		}).fail(function(){
 			console.log("error")
