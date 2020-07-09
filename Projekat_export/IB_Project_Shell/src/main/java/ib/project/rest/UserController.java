@@ -17,7 +17,7 @@ import ib.project.service.AuthorityService;
 import ib.project.service.UserService;
 
 @RestController
-@RequestMapping(value="api/user")
+@RequestMapping(value="api/users")
 public class UserController {
 
 	@Autowired
