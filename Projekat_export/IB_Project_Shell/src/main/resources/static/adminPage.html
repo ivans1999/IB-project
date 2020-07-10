@@ -2,20 +2,22 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 <title>Admin Page</title>
 </head>
 <body>
 <h2>Welcome admin</h2>
 <h3>Lista korisnika:</h3>
+<input type="text" id="myInputt" onkeyup="myFunction()" placeholder="Pretrazi korisnike" title="Pretrazi korisnike. . .">
 <table border="1" id="tabelaKorisnika">
 <tr bgcolor="lightgrey">
-			<th>ID</th>
-			<th>Email</th>
-			<th>Password</th>
-			<th>Certificate</th>
-			<th>Trajanje</th>
-			<th>Active</th>
-			<th>Authority</th>	
+			<th onclick="sortTable(0)" style="width:20%;">ID</th>
+			<th onclick="sortTable(1)" style="width:20%;">Email</th>
+			<th onclick="sortTable(2)" style="width:20%;">Password</th>
+			<th onclick="sortTable(3)" style="width:20%;">Certificate</th>
+			<th onclick="sortTable(4)" style="width:20%;">Trajanje</th>
+			<th onclick="sortTable(5)" style="width:20%;">Active</th>
+			<th onclick="sortTable(6)" style="width:20%;">Authority</th>	
 </tr>
 <tr bgcolor="lightgrey">
 			<td align="center"><input type="text" id="ID"></td>
@@ -27,6 +29,91 @@
 			<td align="center"><input type="text" id="authorityInput"></td>		
 </tr>
 </table>
+</br>
 <p><a href="login.html">Odjava</a></p>
+</br>
+<p><a href="index.html">Odlazak na index stranicu</a>
+
+<script>
+function myFunction() {
+var input, filter, found, table, tr, td, i, j;
+      input = document.getElementById("myInputt");
+      filter = input.value.toUpperCase();
+      table = document.getElementById("tabelaKorisnika");
+      tr = table.getElementsByTagName("tr");
+      for (i = 1; i < tr.length; i++) {
+        td = tr[i].getElementsByTagName("td");
+          for (j = 0; j <td.length; j++) {
+              if (td[j].innerHTML.toUpperCase().indexOf(filter) > -1) {
+                  found = true;
+                }
+          }
+          if (found) {
+            tr[i].style.display = "";
+              found = false;
+            } else {
+              tr[i].style.display = "none";
+          }
+        }
+      }
+      </script>
+
+<script>
+  function sortTable(n) {
+    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    table = document.getElementById("tabelaKorisnika");
+    tablee = document.getElementById("tabelaKorisnikaa")
+    switching = true;
+    // Set the sorting direction to ascending:
+    dir = "asc";
+    /* Make a loop that will continue until
+    no switching has been done: */
+    while (switching) {
+      // Start by saying: no switching is done:
+      switching = false;
+      rows = table.rows;
+      /* Loop through all table rows (except the
+      first, which contains table headers): */
+      for (i = 1; i < (rows.length - 1); i++) {
+        // Start by saying there should be no switching:
+        shouldSwitch = false;
+        /* Get the two elements you want to compare,
+        one from current row and one from the next: */
+        x = rows[i].getElementsByTagName("TD")[n];
+        y = rows[i + 1].getElementsByTagName("TD")[n];
+        /* Check if the two rows should switch place,
+        based on the direction, asc or desc: */
+        if (dir == "asc") {
+          if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+            // If so, mark as a switch and break the loop:
+            shouldSwitch = true;
+            break;
+          }
+        } else if (dir == "desc") {
+          if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+            // If so, mark as a switch and break the loop:
+            shouldSwitch = true;
+            break;
+          }
+        }
+      }
+      if (shouldSwitch) {
+        /* If a switch has been marked, make the switch
+        and mark that a switch has been done: */
+        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+        // Each time a switch is done, increase this count by 1:
+        switchcount ++;
+      } else {
+        /* If no switching has been done AND the direction is "asc",
+        set the direction to "desc" and run the while loop again. */
+        if (switchcount == 0 && dir == "asc") {
+          dir = "desc";
+          switching = true;
+        }
+      }
+    }
+  }
+  </script>
 </body>
 </html>

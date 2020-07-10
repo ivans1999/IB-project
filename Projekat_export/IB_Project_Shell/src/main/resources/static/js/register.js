@@ -21,7 +21,7 @@ $(document).ready(function(){
 		$.post('api/users/user/registration', {'email': email, 'password': password},
 			function(response){
 				alert('Uspesno ste se registrovali!');
-	            window.location.replace("index.html");
+	            window.location.replace("userPage.html");
 		}).fail(function(){
 			console.log("error")
 		});
