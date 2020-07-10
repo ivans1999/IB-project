@@ -7,11 +7,13 @@ import java.io.InputStreamReader;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,11 +29,14 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.xml.security.utils.JavaUtils;
+import org.w3c.dom.Document;
 
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 
 import model.mailclient.MailBody;
+import signature.SignEnveloped;
+import signature.VerifySignature;
 import support.MailHelper;
 import support.MailReader;
 import util.Base64;
@@ -47,7 +52,7 @@ public class ReadMailClient extends MailClient {
 	private static final String IV1_FILE = "./data/iv1.bin";
 	private static final String IV2_FILE = "./data/iv2.bin";
 	
-	public static void main(String[] args) throws IOException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, IllegalBlockSizeException, BadPaddingException, MessagingException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+	public static void main(String[] args) throws IOException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, IllegalBlockSizeException, BadPaddingException, MessagingException, NoSuchPaddingException, InvalidAlgorithmParameterException, KeyStoreException, NoSuchProviderException, CertificateException {
         // Build a new authorized API client service.
         Gmail service = getGmailService();
         ArrayList<MimeMessage> mimeMessages = new ArrayList<MimeMessage>();
@@ -98,7 +103,7 @@ public class ReadMailClient extends MailClient {
 
 			secretKeyBytes = rsaCipherDec.doFinal(mBody.getEncKeyBytes());
 
-		} catch (KeyStoreException | NoSuchProviderException | CertificateException e) {
+		} catch (CertificateException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -135,5 +140,20 @@ public class ReadMailClient extends MailClient {
 		String decryptedSubjectTxt = new String(aesCipherDec.doFinal(Base64.decode(chosenMessage.getSubject())));
 		String decompressedSubjectTxt = GzipUtil.decompress(Base64.decode(decryptedSubjectTxt));
 		System.out.println("Subject text: " + new String(decompressedSubjectTxt));
+		
+		
+		//pokusaj citanja result.xml dokumenta
+//		KeyStore keyStore = kStoreReader.readKeyStore("./data/userb.jks", "userb".toCharArray());
+//		
+//		Document doc = VerifySignature.loadDocument();
+//		
+//		X509Certificate cer = (X509Certificate) kStoreReader.getCertificateFromKeyStore(keyStore, "usera");
+//		
+//		if(VerifySignature.verifySignature(doc,cer)) {
+//			
+//			System.out.println(".. verification is successful.");
+//		}else {
+//			System.out.println(".. verification falied.");
+//		}
 	}
 }

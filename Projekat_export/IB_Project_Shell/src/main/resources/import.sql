@@ -5,12 +5,13 @@ CREATE TABLE USER(
     email VARCHAR(50) NOT NULL,
 	password VARCHAR(20) NOT NULL, 
 	certificate VARCHAR(40) NOT NULL, 
-	active INT(10),
+	active INT(1),
 	authority VARCHAR(20) NOT NULL,
     PRIMARY KEY(id)
 );
 
 INSERT INTO USER (id, email, password, certificate, active, authority) VALUES (1, 'usera@gmail.com','usera', '' , 1, 'Admin');
+INSERT INTO USER (id, email, password, certificate, active, authority) VALUES (2, 'userb@gmail.com','userb', '' , 1, 'Regular');
 
 CREATE TABLE AUTHORITY(
 	id INT AUTO_INCREMENT,

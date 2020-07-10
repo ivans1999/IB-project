@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.io.InputStreamReader;
@@ -26,6 +27,7 @@ import util.IVHelper;
 import util.KeyStoreReader;
 import support.MailHelper;
 import support.MailWritter;
+import util.XmlTransfromator;
 
 
 public class WriteMailClient extends MailClient {
@@ -83,12 +85,30 @@ public class WriteMailClient extends MailClient {
 			//ucitavanje sifre,sertifikata iz keystorea
 			KeyStoreReader kStoreReader = new KeyStoreReader();
 			kStoreReader.load(new FileInputStream("./data/usera.jks"), "usera");
-			Certificate cerUserB = kStoreReader.getCertificate("userb");
-			PublicKey publicK = cerUserB.getPublicKey();
+			Certificate certificateUserB = kStoreReader.getCertificate("userb");
+			PublicKey publicKey = certificateUserB.getPublicKey();
 			Cipher rsaCipherEnc = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, publicK);
+			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, publicKey);
 			byte[] sifrovanKljuc = rsaCipherEnc.doFinal(secretKey.getEncoded());
 			System.out.println("Kriptovan kljuc: " + Base64.encodeToString(sifrovanKljuc));
+			
+			//KeyStoreReader keyStoreReader = new KeyStoreReader();
+			
+			KeyStore keyStoreUserA = kStoreReader.readKeyStore("./data/usera.jks", "usera".toCharArray());
+			KeyStore keyStoreUserB = kStoreReader.readKeyStore("./data/userb.jks", "userb".toCharArray());
+			
+			
+			PrivateKey privateKey = kStoreReader.getPKey(keyStoreUserA, "usera", "usera".toCharArray());
+			
+			
+			XmlTransfromator.transformXML(reciever,compressedSubject,compressedBody);
+			
+			Certificate userBCertificate = kStoreReader.getCertificateFromKeyStore(keyStoreUserB, "userb");
+			PublicKey publicKeyUserB = kStoreReader.getPublicKeyFromCertificate(userBCertificate);
+			
+			Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			
+			cipher.init(Cipher.ENCRYPT_MODE, publicKeyUserB);
 			
 			MailBody mBody = new MailBody(ciphertextStr, ivParameterSpec1.getIV(), ivParameterSpec2.getIV(), sifrovanKljuc);
 			String mailBody = mBody.toCSV();

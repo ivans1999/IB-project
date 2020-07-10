@@ -17,12 +17,12 @@ import org.w3c.dom.NodeList;
 
 public class VerifySignature {
 	
-	private Document loadDocument(String file) {
+	public static Document loadDocument() {
 		try {
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			dbf.setNamespaceAware(true);
 			DocumentBuilder db = dbf.newDocumentBuilder();
-			Document document = db.parse(new File(file));
+			Document document = db.parse(new File("./data/results.xml"));
 
 			return document;
 		} catch (Exception e) {
@@ -31,7 +31,7 @@ public class VerifySignature {
 		}
 	}
 	
-private boolean verifySignature(Document doc) {
+public static boolean verifySignature(Document doc,Certificate cer) {
 		
 		try { 
 			NodeList signatures = doc.getElementsByTagNameNS("http://www.w3.org/2000/09/xmldsig#", "Signature");
