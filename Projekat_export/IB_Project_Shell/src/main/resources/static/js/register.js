@@ -18,7 +18,7 @@ $(document).ready(function(){
             alert('Uneli ste razlicite lozinke!');
             return;
         }
-		$.post('api/users/user/registration', {'email': email, 'password': password},
+		$.post('api/users/user/register', {'email': email, 'password': password},
 			function(response){
 				alert('Uspesno ste se registrovali!');
 	            window.location.replace("userPage.html");

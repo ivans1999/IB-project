@@ -54,14 +54,14 @@ public class UserController {
 	}
 	
 	
-	@PostMapping(path="user/registration")
+	@PostMapping(path="user/register")
 	public ResponseEntity<User> registrationUser(@RequestParam String email, @RequestParam String password) {
-		Authority auth = authorityService.findByName("Regular");
+		Authority authority = authorityService.findByName("Regular");
 		User user = new User();
-		User checkUser = userService.findByEmail(email);
-		if (checkUser == null) {
+		User userChecker = userService.findByEmail(email);
+		if (userChecker == null) {
 			user.setActive(false);
-			user.setAuthority(auth);
+			user.setAuthority(authority);
 			user.setCertificate("");
 			user.setEmail(email);
 			user.setPassword(password);
