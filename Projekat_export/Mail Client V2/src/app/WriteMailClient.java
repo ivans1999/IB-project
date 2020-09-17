@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.cert.Certificate;
 import java.io.InputStreamReader;
 
@@ -27,7 +28,6 @@ import util.IVHelper;
 import util.KeyStoreReader;
 import support.MailHelper;
 import support.MailWritter;
-import util.XmlTransfromator;
 
 
 public class WriteMailClient extends MailClient {
@@ -35,6 +35,12 @@ public class WriteMailClient extends MailClient {
 	private static final String KEY_FILE = "./data/session.key";
 	private static final String IV1_FILE = "./data/iv1.bin";
 	private static final String IV2_FILE = "./data/iv2.bin";
+	private static final String KEY_STORE_USER_A = "./data/usera.jks";
+	private static final String KEY_STORE_USER_B = "./data/userb.jks";
+	private static final String KEY_STORE_A_PASSWORD = "usera";
+	private static final String KEY_STORE_B_PASSWORD = "usera"; 
+	private static final String KEY_STORE_B_ALIAS = "userb";
+	private static KeyStoreReader keyStoreReader = new KeyStoreReader();
 	
 	public static void main(String[] args) {
 		
@@ -64,56 +70,38 @@ public class WriteMailClient extends MailClient {
 			
 			//inicijalizacija za sifrovanje 
 			IvParameterSpec ivParameterSpec1 = IVHelper.createIV();
+			byte [] ivParamSpec1 = ivParameterSpec1.getIV();
 			aesCipherEnc.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec1);
 			
 			
 			//sifrovanje
-			byte[] ciphertext = aesCipherEnc.doFinal(compressedBody.getBytes());
-			String ciphertextStr = Base64.encodeToString(ciphertext);
-			System.out.println("Kriptovan tekst: " + ciphertextStr);
+			byte[] ciphertextBody = aesCipherEnc.doFinal(compressedBody.getBytes());
+			String ciphertextStrBody = Base64.encodeToString(ciphertextBody);
+			System.out.println("Crypyed text: " + ciphertextStrBody);
 			
 			
 			//inicijalizacija za sifrovanje 
 			IvParameterSpec ivParameterSpec2 = IVHelper.createIV();
+			byte [] ivParamSpec2 = ivParameterSpec2.getIV();
 			aesCipherEnc.init(Cipher.ENCRYPT_MODE, secretKey, ivParameterSpec2);
 			
-			byte[] ciphersubject = aesCipherEnc.doFinal(compressedSubject.getBytes());
-			String ciphersubjectStr = Base64.encodeToString(ciphersubject);
-			System.out.println("Kriptovan subject: " + ciphersubjectStr);
+			byte[] ciphertextSubject = aesCipherEnc.doFinal(compressedSubject.getBytes());
+			String ciphertextStrSubject = Base64.encodeToString(ciphertextSubject);
+			System.out.println("Crypted subject: " + ciphertextStrSubject);
 			
 			
 			//ucitavanje sifre,sertifikata iz keystorea
-			KeyStoreReader kStoreReader = new KeyStoreReader();
-			kStoreReader.load(new FileInputStream("./data/usera.jks"), "usera");
-			Certificate certificateUserB = kStoreReader.getCertificate("userb");
-			PublicKey publicKey = certificateUserB.getPublicKey();
+			KeyStore keyStoreUserA = keyStoreReader.readKeyStore(KEY_STORE_USER_B, KEY_STORE_B_PASSWORD.toCharArray());
+			Certificate certificateB = keyStoreReader.getCertificateFromKeyStore(keyStoreUserA, KEY_STORE_B_ALIAS);
+			PublicKey publicKeyUserB = keyStoreReader.getPublicKeyFromCertificate(certificateB);
+			PrivateKey privateKeyUserB = keyStoreReader.getPrivateKeyFromKeyStore(keyStoreUserA, KEY_STORE_B_ALIAS, KEY_STORE_B_PASSWORD.toCharArray());
+			System.out.println("UserB certificate: " + certificateB);
+			System.out.println("UserB public key:  " + publicKeyUserB);
+			
+			//sifrovanje session-key uz pomoc javnog kljuca
 			Cipher rsaCipherEnc = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, publicKey);
-			byte[] sifrovanKljuc = rsaCipherEnc.doFinal(secretKey.getEncoded());
-			System.out.println("Kriptovan kljuc: " + Base64.encodeToString(sifrovanKljuc));
-			
-			//KeyStoreReader keyStoreReader = new KeyStoreReader();
-			
-			KeyStore keyStoreUserA = kStoreReader.readKeyStore("./data/usera.jks", "usera".toCharArray());
-			KeyStore keyStoreUserB = kStoreReader.readKeyStore("./data/userb.jks", "userb".toCharArray());
-			
-			
-			PrivateKey privateKey = kStoreReader.getPKey(keyStoreUserA, "usera", "usera".toCharArray());
-			
-			
-			XmlTransfromator.transformXML(reciever,compressedSubject,compressedBody);
-			
-			Certificate userBCertificate = kStoreReader.getCertificateFromKeyStore(keyStoreUserB, "userb");
-			PublicKey publicKeyUserB = kStoreReader.getPublicKeyFromCertificate(userBCertificate);
-			
-			Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			
-			cipher.init(Cipher.ENCRYPT_MODE, publicKeyUserB);
-			
-			MailBody mBody = new MailBody(ciphertextStr, ivParameterSpec1.getIV(), ivParameterSpec2.getIV(), sifrovanKljuc);
-			String mailBody = mBody.toCSV();
-			System.out.println("Telo emaila: " + mailBody);
-			
+			rsaCipherEnc.init(Cipher.ENCRYPT_MODE, publicKeyUserB);
+			byte[] ciphertextSessionKey = rsaCipherEnc.doFinal(secretKey.getEncoded());
 			
 			
 			//snimaju se bajtovi kljuca i IV.
@@ -121,8 +109,18 @@ public class WriteMailClient extends MailClient {
 			JavaUtils.writeBytesToFilename(IV1_FILE, ivParameterSpec1.getIV());
 			JavaUtils.writeBytesToFilename(IV2_FILE, ivParameterSpec2.getIV());
 			
-        	MimeMessage mimeMessage = MailHelper.createMimeMessage(reciever, ciphersubjectStr, ciphertextStr);
-        	MailWritter.sendMessage(service, "me", mimeMessage);
+			//potpis 
+		       Signature signature = Signature.getInstance("SHA256withRSA");
+		       signature.initSign(privateKeyUserB);
+		       byte[] bytes = ciphertextBody;
+		       signature.update(bytes);
+		      byte[] sign = signature.sign();
+		      System.out.println("Email has been signed with signature : ");
+		      System.out.println(sign.toString());
+			  MailBody mailBody = new MailBody(ciphertextBody, ivParamSpec1, ivParamSpec2,  ciphertextSessionKey, sign);
+			  
+     	MimeMessage mimeMessage = MailHelper.createMimeMessage(reciever, ciphertextStrBody, mailBody.toCSV());
+     	MailWritter.sendMessage(service, "me", mimeMessage);
         	
         }catch (Exception e) {
         	e.printStackTrace();

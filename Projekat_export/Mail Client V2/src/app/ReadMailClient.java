@@ -1,18 +1,18 @@
 package app;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
-import java.security.cert.CertificateException;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -29,30 +29,46 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import org.apache.xml.security.utils.JavaUtils;
-import org.w3c.dom.Document;
 
 import com.google.api.services.gmail.Gmail;
 import com.google.api.services.gmail.model.Message;
 
+import util.KeyStoreReader;
+import model.keystore.IssuerData;
 import model.mailclient.MailBody;
-import signature.SignEnveloped;
-import signature.VerifySignature;
 import support.MailHelper;
 import support.MailReader;
 import util.Base64;
 import util.GzipUtil;
-import util.KeyStoreReader;
 
 public class ReadMailClient extends MailClient {
+
+	// validacija
+	public static boolean validate(PublicKey publicKey,
+			 byte[] data, byte[] sign) throws Exception {
+		       Signature signature = Signature.getInstance("SHA256withRSA");
+		       signature.initVerify(publicKey);
+		       signature.update(data);
+		       boolean verified = signature.verify(sign);
+		       if (verified==true) {
+		    	   System.out.println("Validity of email has been proved with signature.");
+		       }else {
+		    	   System.out.println("This email is not valid and it's not compatible signature.");
+		       }
+		        return verified;
+		}	
 
 	public static long PAGE_SIZE = 3;
 	public static boolean ONLY_FIRST_PAGE = true;
 	
-	private static final String KEY_FILE = "./data/session.key";
-	private static final String IV1_FILE = "./data/iv1.bin";
-	private static final String IV2_FILE = "./data/iv2.bin";
-	
-	public static void main(String[] args) throws IOException, InvalidKeyException, NoSuchAlgorithmException, InvalidKeySpecException, IllegalBlockSizeException, BadPaddingException, MessagingException, NoSuchPaddingException, InvalidAlgorithmParameterException, KeyStoreException, NoSuchProviderException, CertificateException {
+	private static final String KEY_STORE_USER_B = "./data/userb.jks";
+	private static final String KEY_STORE_B_PASSWORD = "userb";
+	private static final char [] keyB_password_char = KEY_STORE_B_PASSWORD.toCharArray();
+	private static final String KEY_STORE_B_ALIAS = "userb";
+	private static KeyStoreReader keyStoreReader = new KeyStoreReader();
+
+
+	public static void main(String[] args) throws Exception {
         // Build a new authorized API client service.
         Gmail service = getGmailService();
         ArrayList<MimeMessage> mimeMessages = new ArrayList<MimeMessage>();
@@ -81,79 +97,54 @@ public class ReadMailClient extends MailClient {
 				e.printStackTrace();
 			}	
         }
-        
         System.out.println("Select a message to decrypt:");
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-	        
 	    String answerStr = reader.readLine();
 	    Integer answer = Integer.parseInt(answerStr);
-	    
 		MimeMessage chosenMessage = mimeMessages.get(answer);
 		
-		MailBody mBody = new MailBody(MailHelper.getText(chosenMessage));
+		String body = MailHelper.getText(chosenMessage);
+		
+		//mail body objekat
+		MailBody mailBody = new MailBody(body);
+		
+		//preuzimanje vektora, enkriptovanog kljuca i tela poruke
+		IvParameterSpec ivParameterSpec1_test = new IvParameterSpec(mailBody.getIV1Bytes());
+		IvParameterSpec ivParameterSpec2_test = new IvParameterSpec(mailBody.getIV2Bytes());
+		byte [] message = mailBody.getEncMessageBytes();
+		byte [] encSessionKey = mailBody.getEncKeyBytes();	
+		byte [] signature = mailBody.getSignatureBytes();
+		
+		//pristup keystore-u i uzimanje privatnog kljuca korisnika B
+		KeyStore keyStoreUserB = keyStoreReader.readKeyStore(KEY_STORE_USER_B, KEY_STORE_B_PASSWORD.toCharArray());
+		PrivateKey privateKeyUserB = keyStoreReader.getPrivateKeyFromKeyStore(keyStoreUserB, KEY_STORE_B_ALIAS, keyB_password_char);
+		Certificate certificateB = keyStoreReader.getCertificateFromKeyStore(keyStoreUserB, KEY_STORE_B_ALIAS);
+		PublicKey publicKeyUserB = keyStoreReader.getPublicKeyFromCertificate(certificateB);
 
-		KeyStoreReader kStoreReader;
-		byte[] secretKeyBytes = null;
-		try {
-			kStoreReader = new KeyStoreReader();
-			kStoreReader.load(new FileInputStream("./data/userb.jks"), "userb");
-			PrivateKey privateKey = kStoreReader.getKey("userb", "userb");
-			Cipher rsaCipherDec = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			rsaCipherDec.init(Cipher.DECRYPT_MODE, privateKey);
-
-			secretKeyBytes = rsaCipherDec.doFinal(mBody.getEncKeyBytes());
-
-		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	    
-        //TODO: Decrypt a message and decompress it. The private key is stored in a file.
-		Cipher aesCipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		SecretKey secretKey = new SecretKeySpec(JavaUtils.getBytesFromFile(KEY_FILE), "AES");
+		//dekripcija tajnog kljuca privatnim kljucem korisnika B
+		Cipher rsaCipherDec = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+		rsaCipherDec.init(Cipher.DECRYPT_MODE, privateKeyUserB);
+		byte[] sessionKeyDec = rsaCipherDec.doFinal(encSessionKey);
 		
+		SecretKey ss = new SecretKeySpec(sessionKeyDec, "AES");
 		
-		byte[] iv1 = JavaUtils.getBytesFromFile(IV1_FILE);
-		IvParameterSpec ivParameterSpec1 = new IvParameterSpec(iv1);
-		aesCipherDec.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec1);
+		//inicijalizacija i dekripcija tela poruke tajnim kljucem
+		Cipher bodyCipherDec = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		bodyCipherDec.init(Cipher.DECRYPT_MODE, ss, ivParameterSpec1_test);
+		byte[] receivedTxt = bodyCipherDec.doFinal(message);
 		
-		System.out.println(mBody.getEncMessage());
-		byte[] decMsg = null;
-		try {
-			decMsg = aesCipherDec.doFinal(mBody.getEncMessageBytes());
-			String receivedBodyTxt = new String(decMsg);
-			System.out.println(receivedBodyTxt);
-			String decompressedBodyText = GzipUtil.decompress(Base64.decode(receivedBodyTxt));
-			System.out.println("Body text: " + decompressedBodyText);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
+		//dekompresija tela poruke
+		String decompressedBodyText = GzipUtil.decompress(Base64.decode(new String(receivedTxt)));
 		
-		
-		byte[] iv2 = JavaUtils.getBytesFromFile(IV2_FILE);
-		IvParameterSpec ivParameterSpec2 = new IvParameterSpec(iv2);
-		//inicijalizacija za dekriptovanje
-		aesCipherDec.init(Cipher.DECRYPT_MODE, secretKey, ivParameterSpec2);
-		
-		//dekompresovanje i dekriptovanje subject-a
-		String decryptedSubjectTxt = new String(aesCipherDec.doFinal(Base64.decode(chosenMessage.getSubject())));
+		//dekriptovanje i dekompresija subject-a
+		bodyCipherDec.init(Cipher.DECRYPT_MODE, ss, ivParameterSpec2_test);
+		String decryptedSubjectTxt = new String(bodyCipherDec.doFinal(Base64.decode(chosenMessage.getSubject())));
 		String decompressedSubjectTxt = GzipUtil.decompress(Base64.decode(decryptedSubjectTxt));
-		System.out.println("Subject text: " + new String(decompressedSubjectTxt));
-		
-		
-		//pokusaj citanja result.xml dokumenta
-//		KeyStore keyStore = kStoreReader.readKeyStore("./data/userb.jks", "userb".toCharArray());
-//		
-//		Document doc = VerifySignature.loadDocument();
-//		
-//		X509Certificate cer = (X509Certificate) kStoreReader.getCertificateFromKeyStore(keyStore, "usera");
-//		
-//		if(VerifySignature.verifySignature(doc,cer)) {
-//			
-//			System.out.println(".. verification is successful.");
-//		}else {
-//			System.out.println(".. verification falied.");
-//		}
+
+		validate(publicKeyUserB, message, signature);
+		System.out.println("Subject: " + decompressedSubjectTxt);
+		System.out.println("Body: " + decompressedBodyText);
+
 	}
+	
 }
