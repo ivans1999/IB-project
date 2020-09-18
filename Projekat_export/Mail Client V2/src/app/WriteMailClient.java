@@ -38,7 +38,7 @@ public class WriteMailClient extends MailClient {
 	private static final String KEY_STORE_USER_A = "./data/usera.jks";
 	private static final String KEY_STORE_USER_B = "./data/userb.jks";
 	private static final String KEY_STORE_A_PASSWORD = "usera";
-	private static final String KEY_STORE_B_PASSWORD = "usera"; 
+	private static final String KEY_STORE_B_PASSWORD = "userb"; 
 	private static final String KEY_STORE_B_ALIAS = "userb";
 	private static KeyStoreReader keyStoreReader = new KeyStoreReader();
 	
