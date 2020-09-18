@@ -4,12 +4,14 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -163,5 +165,19 @@ public class KeyStoreReader {
 		}
 		
 		return null;
+	}
+	
+	public static boolean validateCertificate(X509Certificate certificate, PublicKey publicKey) {
+
+		// ako validacija nije uspesna desice se exception
+		try {
+			certificate.verify(publicKey);
+			System.out.println("\nSertifikat je validan.");
+			return true;
+		} catch (InvalidKeyException | CertificateException | NoSuchAlgorithmException | NoSuchProviderException
+				| SignatureException e) {
+			System.out.println("\nSertifikat nije validan.!");
+			return false;
+		}
 	}
 }
