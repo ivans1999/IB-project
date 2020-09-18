@@ -26,7 +26,7 @@ public class DemoApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(DemoApplication.class, args);
 		
-		//create files folder in target/classes
+		//create files folder in target/classes rn.
 		try {
 			String path = DemoController.class.getProtectionDomain().getCodeSource().getLocation().getPath() + DATA_DIR_PATH;
 			path = path.replaceAll("%20", " ");
