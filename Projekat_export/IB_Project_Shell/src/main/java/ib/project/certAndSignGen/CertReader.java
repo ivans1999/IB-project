@@ -90,5 +90,22 @@ public class CertReader {
 		
 		return certificates;
 	}
+	
+public static Certificate readBase64EncodedCertificate(String path) {
+		
+		try {
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(path));
+			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+			
+			if (bis.available() > 0) {
+				Certificate certificate = certFactory.generateCertificate(bis);
+				return certificate;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.err.println("Exception reading certificate from file");
+		}
+		return null;
+	}
 }
 
